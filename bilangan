@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LKPD — Detektif Tanda Bilangan Bulat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #10151c;
+    --panel: #1a2230;
+    --panel-2: #212c3d;
+    --line: #2c394d;
+    --text: #f3f1ea;
+    --muted: #93a0b4;
+    --pos: #ffd23f;
+    --neg: #ff6b6b;
+    --teal: #3ddc97;
+    --tile: #f3f1ea;
+    --tile-ink: #10151c;
+    --radius: 18px;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(1100px 500px at 15% -10%, rgba(61,220,151,0.08), transparent 60%),
+      radial-gradient(900px 500px at 90% 0%, rgba(255,210,63,0.06), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Work Sans', sans-serif;
+    line-height:1.5;
+    padding-bottom:60px;
+  }
+  h1,h2,h3,.display{ font-family:'Fredoka', sans-serif; }
+
+  a{ color:inherit; }
+
+  /* ---------- layout shell ---------- */
+  .wrap{ max-width:820px; margin:0 auto; padding:28px 18px 10px; }
+
+  /* ---------- header / hero ---------- */
+  .hero{
+    position:relative;
+    background: linear-gradient(160deg, var(--panel-2), var(--panel));
+    border:1px solid var(--line);
+    border-radius: 24px;
+    padding: 30px 26px 26px;
+    overflow:hidden;
+  }
+  .hero::after{
+    content:"";
+    position:absolute; inset:0;
+    background: radial-gradient(340px 220px at 88% -10%, rgba(255,210,63,0.14), transparent 70%);
+    pointer-events:none;
+  }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:12.5px; letter-spacing:.06em; text-transform:uppercase;
+    color: var(--teal); font-weight:600;
+    background: rgba(61,220,151,0.1);
+    border:1px solid rgba(61,220,151,0.35);
+    padding:5px 12px; border-radius:999px;
+  }
+  .glass{ width:14px; height:14px; flex:none; animation: sway 3.2s ease-in-out infinite; }
+  @keyframes sway{ 0%,100%{ transform:rotate(-8deg); } 50%{ transform:rotate(8deg); } }
+
+  .hero h1{
+    font-size: clamp(24px, 5vw, 34px);
+    margin: 14px 0 6px;
+    font-weight:700;
+  }
+  .hero h1 span{ color:var(--pos); }
+  .hero p.lede{ color:var(--muted); max-width:56ch; margin:0 0 22px; font-size:15px;}
+
+  .idbox{
+    display:grid; grid-template-columns: 1.3fr 1fr 1fr; gap:10px;
+    background: rgba(0,0,0,0.18);
+    border:1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px;
+  }
+  @media (max-width: 560px){ .idbox{ grid-template-columns:1fr; } }
+  .idbox label{ display:block; font-size:11.5px; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:.04em;}
+  .idbox input{ width:100%; }
+
+  /* progress */
+  .progress-row{ display:flex; align-items:center; gap:12px; margin-top:18px; }
+  .progress-track{ flex:1; height:10px; background:rgba(255,255,255,0.08); border-radius:999px; overflow:hidden; border:1px solid var(--line);}
+  .progress-fill{ height:100%; width:0%; background:linear-gradient(90deg, var(--teal), var(--pos)); transition: width .35s ease; border-radius:999px; }
+  .progress-label{ font-size:12.5px; color:var(--muted); white-space:nowrap; font-weight:600; }
+
+  /* ---------- generic form controls ---------- */
+  input[type="text"], textarea{
+    background: rgba(255,255,255,0.04);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:10px;
+    padding:9px 11px;
+    font-family:inherit;
+    font-size:14.5px;
+    outline:none;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  input[type="text"]:focus, textarea:focus{
+    border-color: var(--teal);
+    background: rgba(61,220,151,0.06);
+  }
+  input[type="text"]:focus-visible, textarea:focus-visible, button:focus-visible{
+    outline: 2px solid var(--pos);
+    outline-offset: 2px;
+  }
+  textarea{ width:100%; resize:vertical; min-height:70px; }
+  .blank{ width:90px; text-align:center; font-weight:600; }
+  .blank[readonly]{ background: rgba(255,210,63,0.12); border-color: rgba(255,210,63,0.4); color: var(--pos); }
+
+  .field.correct{ border-color: var(--teal) !important; background: rgba(61,220,151,0.14) !important; }
+  .field.incorrect{ border-color: var(--neg) !important; background: rgba(255,107,107,0.12) !important; }
+
+  /* ---------- kegiatan cards ---------- */
+  .kegiatan{
+    margin-top:22px;
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px 22px 24px;
+  }
+  .keg-head{ display:flex; align-items:center; gap:14px; margin-bottom:6px; }
+  .keg-num-slot{ flex:none; }
+  .keg-titles h2{ margin:0; font-size:18px; font-weight:600; }
+  .keg-titles .sub{ color:var(--muted); font-size:13px; margin-top:2px; }
+  .keg-body{ margin-top:16px; }
+  .keg-body p{ margin: 10px 0; font-size:14.5px; }
+  .keg-body p.q{ color: var(--muted); font-size: 14px; }
+
+  /* domino tile signature element */
+  .domino-tile{ display:flex; background:var(--tile); border-radius:8px; padding:4px; gap:4px; box-shadow: 0 3px 0 rgba(0,0,0,0.35); }
+  .domino-half{ width:26px; height:26px; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:1px; padding:3px; }
+  .domino-divider{ width:2px; background:var(--tile-ink); opacity:.25; border-radius:2px; }
+  .pip{ border-radius:50%; }
+  .pip.on{ background:var(--tile-ink); }
+
+  /* tables */
+  .tbl-wrap{ overflow-x:auto; margin:12px 0; border-radius:12px; border:1px solid var(--line); }
+  table{ border-collapse:collapse; width:100%; min-width:420px; font-size:14px; }
+  thead th{
+    background: var(--panel-2); color: var(--muted);
+    text-transform:uppercase; letter-spacing:.03em; font-size:11.5px;
+    padding:9px 12px; text-align:left; border-bottom:1px solid var(--line);
+  }
+  tbody td{ padding:9px 12px; border-bottom:1px solid var(--line); }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:nth-child(odd){ background: rgba(255,255,255,0.015); }
+
+  /* buttons */
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    border:none; cursor:pointer; font-family:inherit; font-weight:600; font-size:14px;
+    padding:10px 16px; border-radius:10px; transition: transform .12s ease, filter .12s ease;
+  }
+  .btn:hover{ filter:brightness(1.08); }
+  .btn:active{ transform: translateY(1px); }
+  .btn-check{ background:var(--teal); color:#07271c; }
+  .btn-reset{ background:transparent; color:var(--muted); border:1px solid var(--line); }
+  .btn-row{ display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap; }
+  .check-feedback{ font-size:13.5px; font-weight:600; color:var(--muted); }
+  .check-feedback.good{ color:var(--teal); }
+  .check-feedback.mixed{ color:var(--pos); }
+
+  /* footer */
+  .footer{ text-align:center; margin-top:26px; color:var(--muted); font-size:13px; }
+  .footer .btn-reset{ margin-top:10px; }
+
+  @media (prefers-reduced-motion: reduce){
+    .glass{ animation:none; }
+    *{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <span class="eyebrow">
+      <svg class="glass" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="6.5" stroke="currentColor" stroke-width="2"/><line x1="15" y1="15" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Kasus Matematika
+    </span>
+    <h1>Detektif Tanda: <span>Bilangan Bulat</span></h1>
+    <p class="lede">Kelas VII — Perkalian &amp; Pembagian Bilangan Bulat. Ikuti pola pada setiap bukti, lalu simpulkan sendiri aturan tandanya sebelum dibuka di buku.</p>
+
+    <div class="idbox">
+      <div><label for="nama">Nama</label><input type="text" id="nama" class="field"></div>
+      <div><label for="kelas">Kelas</label><input type="text" id="kelas" class="field"></div>
+      <div><label for="kelompok">Kelompok</label><input type="text" id="kelompok" class="field"></div>
+    </div>
+
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <span class="progress-label" id="progressLabel">Kasus terpecahkan: 0%</span>
+    </div>
+  </div>
+
+  <!-- KEGIATAN 1 -->
+  <div class="kegiatan">
+    <div class="keg-head">
+      <div class="keg-num-slot" data-domino="1"></div>
+      <div class="keg-titles">
+        <h2>Mengingat Perkalian yang Sudah Kita Kenal</h2>
+        <div class="sub">Pemanasan — pola yang sudah kalian kuasai sejak SD</div>
+      </div>
+    </div>
+    <div class="keg-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Soal</th><th>Hasil</th></tr></thead>
+          <tbody>
+            <tr><td>4 × 3</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>4 × 2</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>4 × 1</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>4 × 0</td><td><input type="text" class="field blank"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="q">Amati: setiap angka pengali berkurang 1 (dari 3 → 2 → 1 → 0). Apa yang terjadi pada hasilnya setiap kali pengalinya berkurang 1?</p>
+      <textarea class="field" placeholder="Tulis jawabanmu di sini..."></textarea>
+    </div>
+  </div>
+
+  <!-- KEGIATAN 2 -->
+  <div class="kegiatan">
+    <div class="keg-head">
+      <div class="keg-num-slot" data-domino="2"></div>
+      <div class="keg-titles">
+        <h2>Menemukan Pola: Positif × Negatif</h2>
+        <div class="sub">Lanjutkan pola ke bilangan negatif</div>
+      </div>
+    </div>
+    <div class="keg-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Soal</th><th>Hasil</th></tr></thead>
+          <tbody>
+            <tr><td>4 × 0</td><td><input type="text" class="blank" value="0" readonly></td></tr>
+            <tr><td>4 × (-1)</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>4 × (-2)</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>4 × (-3)</td><td><input type="text" class="field blank"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="q">Ikuti terus polanya. Apakah hasilnya semakin besar atau semakin kecil? Jadi, apa tanda hasil kali dari <strong>positif × negatif</strong>?</p>
+      <input type="text" class="field" style="width:100%; max-width:260px;" placeholder="Tanda hasilnya: ...">
+
+      <p style="margin-top:20px;">Coba juga dari arah sebaliknya untuk membuktikan:</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Soal</th><th>Hasil</th></tr></thead>
+          <tbody>
+            <tr><td>-5 × 4</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>-5 × 3</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>-5 × 2</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>-5 × 1</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>-5 × 0</td><td><input type="text" class="field blank"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="q">Apa tanda hasil kali dari <strong>negatif × positif</strong>?</p>
+      <input type="text" class="field" style="width:100%; max-width:260px;" placeholder="Tanda hasilnya: ...">
+    </div>
+  </div>
+
+  <!-- KEGIATAN 3 -->
+  <div class="kegiatan">
+    <div class="keg-head">
+      <div class="keg-num-slot" data-domino="3"></div>
+      <div class="keg-titles">
+        <h2>Menemukan Pola: Negatif × Negatif</h2>
+        <div class="sub">Bagian paling penasaran — buktikan sendiri</div>
+      </div>
+    </div>
+    <div class="keg-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Soal</th><th>Hasil</th></tr></thead>
+          <tbody>
+            <tr><td>-3 × 2</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>-3 × 1</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>-3 × 0</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>-3 × (-1)</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>-3 × (-2)</td><td><input type="text" class="field blank"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="q">Dari baris "-3 × 0" ke "-3 × (-1)", pengalinya berkurang 1 (dari 0 ke -1). Berdasarkan pola sebelumnya, apakah hasilnya bertambah atau berkurang 3? Jadi, apa tanda hasil kali dari <strong>negatif × negatif</strong>?</p>
+      <input type="text" class="field" style="width:100%; max-width:260px;" placeholder="Tanda hasilnya: ...">
+    </div>
+  </div>
+
+  <!-- KEGIATAN 4 -->
+  <div class="kegiatan">
+    <div class="keg-head">
+      <div class="keg-num-slot" data-domino="4"></div>
+      <div class="keg-titles">
+        <h2>Menyimpulkan Aturan Tanda Perkalian</h2>
+        <div class="sub">Tuliskan kesimpulanmu sendiri, jangan lihat buku dulu!</div>
+      </div>
+    </div>
+    <div class="keg-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Operasi</th><th>Tanda Hasil</th></tr></thead>
+          <tbody>
+            <tr><td>(+) × (+)</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>(+) × (-)</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>(-) × (+)</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>(-) × (-)</td><td><input type="text" class="field blank"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="q">Diskusikan dengan kelompok: mengapa dua tanda yang sama menghasilkan positif, sedangkan dua tanda berbeda menghasilkan negatif?</p>
+      <textarea class="field" placeholder="Tulis hasil diskusimu..."></textarea>
+    </div>
+  </div>
+
+  <!-- KEGIATAN 5 -->
+  <div class="kegiatan">
+    <div class="keg-head">
+      <div class="keg-num-slot" data-domino="5"></div>
+      <div class="keg-titles">
+        <h2>Latihan Perkalian</h2>
+        <div class="sub">Waktunya buktikan pemahamanmu</div>
+      </div>
+    </div>
+    <div class="keg-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>No</th><th>Soal</th><th>Hasil</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>-6 × 7</td><td><input type="text" class="field blank check-item" data-group="keg5" data-answer="-42"></td></tr>
+            <tr><td>2</td><td>9 × (-5)</td><td><input type="text" class="field blank check-item" data-group="keg5" data-answer="-45"></td></tr>
+            <tr><td>3</td><td>-8 × (-4)</td><td><input type="text" class="field blank check-item" data-group="keg5" data-answer="32"></td></tr>
+            <tr><td>4</td><td>12 × (-3)</td><td><input type="text" class="field blank check-item" data-group="keg5" data-answer="-36"></td></tr>
+            <tr><td>5</td><td>-7 × (-9)</td><td><input type="text" class="field blank check-item" data-group="keg5" data-answer="63"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-check" data-check="keg5">🔍 Cek Jawaban</button>
+        <span class="check-feedback" id="fb-keg5"></span>
+      </div>
+
+      <p style="margin-top:20px;"><strong>Soal cerita:</strong> Sebuah kapal selam menyelam dengan kecepatan 5 meter per menit (dianggap -5 meter dari permukaan setiap menit). Berapa kedalaman kapal selam tersebut setelah 6 menit?</p>
+      <textarea class="field" placeholder="Tulis cara dan jawabanmu..."></textarea>
+    </div>
+  </div>
+
+  <!-- KEGIATAN 6 -->
+  <div class="kegiatan">
+    <div class="keg-head">
+      <div class="keg-num-slot" data-domino="6"></div>
+      <div class="keg-titles">
+        <h2>Menemukan Aturan Pembagian (dari Perkalian)</h2>
+        <div class="sub">Ingat: jika a × b = c, maka c : b = a dan c : a = b</div>
+      </div>
+    </div>
+    <div class="keg-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Fakta Perkalian</th><th>Fakta Pembagian yang Berlaku</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>4 × (-3) = -12</td>
+              <td>-12 : (-3) = <input type="text" class="field blank" style="width:60px;">&nbsp; dan &nbsp;-12 : 4 = <input type="text" class="field blank" style="width:60px;"></td>
+            </tr>
+            <tr>
+              <td>-5 × 4 = -20</td>
+              <td>-20 : 4 = <input type="text" class="field blank" style="width:60px;">&nbsp; dan &nbsp;-20 : (-5) = <input type="text" class="field blank" style="width:60px;"></td>
+            </tr>
+            <tr>
+              <td>-3 × (-2) = 6</td>
+              <td>6 : (-2) = <input type="text" class="field blank" style="width:60px;">&nbsp; dan &nbsp;6 : (-3) = <input type="text" class="field blank" style="width:60px;"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="q">Pada baris pertama, hasil kali dua bilangan berbeda tanda adalah negatif. Ketika bilangan negatif itu dibagi, apa tanda hasilnya? Pada baris ketiga, hasil kali dua bilangan negatif adalah positif — ketika bilangan positif itu dibagi bilangan negatif, apa tanda hasilnya?</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Operasi</th><th>Tanda Hasil</th></tr></thead>
+          <tbody>
+            <tr><td>(+) : (+)</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>(+) : (-)</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>(-) : (+)</td><td><input type="text" class="field blank"></td></tr>
+            <tr><td>(-) : (-)</td><td><input type="text" class="field blank"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="q">Apakah polanya sama dengan aturan tanda pada perkalian?</p>
+      <input type="text" class="field" style="width:100%; max-width:260px;" placeholder="Jawabanmu: ...">
+    </div>
+  </div>
+
+  <!-- KEGIATAN 7 -->
+  <div class="kegiatan">
+    <div class="keg-head">
+      <div class="keg-num-slot" data-domino="7"></div>
+      <div class="keg-titles">
+        <h2>Latihan Pembagian</h2>
+        <div class="sub">Terapkan aturan tanda yang baru kalian temukan</div>
+      </div>
+    </div>
+    <div class="keg-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>No</th><th>Soal</th><th>Hasil</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>-48 : 6</td><td><input type="text" class="field blank check-item" data-group="keg7" data-answer="-8"></td></tr>
+            <tr><td>2</td><td>63 : (-9)</td><td><input type="text" class="field blank check-item" data-group="keg7" data-answer="-7"></td></tr>
+            <tr><td>3</td><td>-72 : (-8)</td><td><input type="text" class="field blank check-item" data-group="keg7" data-answer="9"></td></tr>
+            <tr><td>4</td><td>-100 : 5</td><td><input type="text" class="field blank check-item" data-group="keg7" data-answer="-20"></td></tr>
+            <tr><td>5</td><td>-54 : (-6)</td><td><input type="text" class="field blank check-item" data-group="keg7" data-answer="9"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-check" data-check="keg7">🔍 Cek Jawaban</button>
+        <span class="check-feedback" id="fb-keg7"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEGIATAN 8 -->
+  <div class="kegiatan">
+    <div class="keg-head">
+      <div class="keg-num-slot" data-domino="8"></div>
+      <div class="keg-titles">
+        <h2>Soal Campuran &amp; Tantangan</h2>
+        <div class="sub">Level akhir — gabungkan semua yang sudah kalian temukan</div>
+      </div>
+    </div>
+    <div class="keg-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>No</th><th>Soal</th><th>Hasil</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>-5 × 8 : (-4)</td><td><input type="text" class="field blank check-item" data-group="keg8" data-answer="10"></td></tr>
+            <tr><td>2</td><td>-6 × (-6) : 9</td><td><input type="text" class="field blank check-item" data-group="keg8" data-answer="4"></td></tr>
+            <tr><td>3</td><td>100 : (-5) × (-2)</td><td><input type="text" class="field blank check-item" data-group="keg8" data-answer="40"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-check" data-check="keg8">🔍 Cek Jawaban</button>
+        <span class="check-feedback" id="fb-keg8"></span>
+      </div>
+
+      <p style="margin-top:20px;"><strong>Tantangan:</strong> Suhu di sebuah kota turun 2°C setiap jam selama 5 jam berturut-turut. Jika suhu akhir adalah -3°C, berapa suhu awal kota tersebut? (Petunjuk: gunakan operasi kebalikan dari perkalian)</p>
+      <textarea class="field" placeholder="Tulis cara dan jawabanmu..."></textarea>
+    </div>
+  </div>
+
+  <!-- KESIMPULAN AKHIR -->
+  <div class="kegiatan">
+    <div class="keg-head">
+      <div class="keg-titles">
+        <h2>📁 Laporan Akhir Kasus</h2>
+        <div class="sub">Tuliskan aturan tanda hasil kali dan hasil bagi bilangan bulat dengan kalimatmu sendiri</div>
+      </div>
+    </div>
+    <div class="keg-body">
+      <textarea class="field" style="min-height:100px;" placeholder="Kesimpulanku hari ini..."></textarea>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>Kerja bagus, Detektif! Semoga misteri tanda bilangan bulat berhasil terpecahkan. 🕵️</div>
+    <button class="btn btn-reset" id="resetBtn">↺ Reset Semua Jawaban</button>
+  </div>
+
+</div>
+
+<script>
+  // ---------- domino tile renderer (activity numbers as domino pip counts) ----------
+  const dominoMap = {1:[0,1],2:[1,1],3:[1,2],4:[2,2],5:[2,3],6:[3,3],7:[3,4],8:[4,4]};
+  const pipPositions = {
+    0: [],
+    1: [[1,1]],
+    2: [[0,0],[2,2]],
+    3: [[0,0],[1,1],[2,2]],
+    4: [[0,0],[0,2],[2,0],[2,2]],
+    5: [[0,0],[0,2],[1,1],[2,0],[2,2]],
+    6: [[0,0],[0,2],[1,0],[1,2],[2,0],[2,2]]
+  };
+
+  function renderHalf(n){
+    const cells = [];
+    const active = pipPositions[n] || [];
+    for(let r=0;r<3;r++){
+      for(let c=0;c<3;c++){
+        const isOn = active.some(p => p[0]===r && p[1]===c);
+        cells.push(`<div class="pip${isOn ? ' on' : ''}"></div>`);
+      }
+    }
+    return `<div class="domino-half">${cells.join('')}</div>`;
+  }
+
+  function renderDomino(num){
+    const pair = dominoMap[num];
+    if(!pair) return '';
+    return `<div class="domino-tile" aria-hidden="true">${renderHalf(pair[0])}<div class="domino-divider"></div>${renderHalf(pair[1])}</div>`;
+  }
+
+  document.querySelectorAll('[data-domino]').forEach(el => {
+    el.innerHTML = renderDomino(parseInt(el.getAttribute('data-domino'), 10));
+  });
+
+  // ---------- progress tracking ----------
+  const progressFill = document.getElementById('progressFill');
+  const progressLabel = document.getElementById('progressLabel');
+
+  function updateProgress(){
+    const fields = document.querySelectorAll('.field');
+    let filled = 0;
+    fields.forEach(f => { if(f.value && f.value.trim() !== '') filled++; });
+    const pct = fields.length ? Math.round((filled / fields.length) * 100) : 0;
+    progressFill.style.width = pct + '%';
+    progressLabel.textContent = `Kasus terpecahkan: ${pct}%`;
+  }
+
+  document.addEventListener('input', (e) => {
+    if(e.target.classList.contains('field')) updateProgress();
+  });
+
+  // ---------- answer checking ----------
+  function normalize(v){
+    return (v || '').toString().trim().replace(/\s+/g,'').replace(/^\+/,'');
+  }
+
+  document.querySelectorAll('[data-check]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const group = btn.getAttribute('data-check');
+      const items = document.querySelectorAll(`.check-item[data-group="${group}"]`);
+      let correct = 0;
+      items.forEach(input => {
+        const ok = normalize(input.value) === normalize(input.getAttribute('data-answer'));
+        input.classList.remove('correct','incorrect');
+        input.classList.add(ok ? 'correct' : 'incorrect');
+        if(ok) correct++;
+      });
+      const fb = document.getElementById(`fb-${group}`);
+      if(fb){
+        fb.textContent = `${correct}/${items.length} benar`;
+        fb.classList.remove('good','mixed');
+        fb.classList.add(correct === items.length ? 'good' : 'mixed');
+      }
+    });
+  });
+
+  // ---------- reset ----------
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if(!confirm('Yakin mau menghapus semua jawaban?')) return;
+    document.querySelectorAll('.field').forEach(f => {
+      if(!f.hasAttribute('readonly')) f.value = '';
+    });
+    document.querySelectorAll('.check-item').forEach(f => f.classList.remove('correct','incorrect'));
+    document.querySelectorAll('.check-feedback').forEach(f => { f.textContent=''; f.classList.remove('good','mixed'); });
+    updateProgress();
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  updateProgress();
+</script>
+</body>
+</html>
